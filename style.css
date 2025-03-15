@@ -1,0 +1,78 @@
+/* Basic reset and body styling */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    overflow: hidden;
+    font-family: monospace;
+    color: #fff;
+  }
+  
+  /* Make canvas responsive for mobile devices */
+  #gameCanvas {
+    display: block;
+    margin: 0 auto;
+    background: #000;
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+  }
+  
+  /* UI styling: positioned in the top-right */
+  #ui {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 50;
+    font-size: 20px;
+    text-align: right;
+    display: none; /* Hidden until game starts */
+  }
+  #score, #level {
+    margin: 5px 0;
+  }
+  #controls {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  
+  /* Overlays for Start and Game Over screens */
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 600px;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  
+  .hidden {
+    display: none !important;
+  }
+  
+  #startImage,
+  #gameOverImage {
+    max-width: 80%;
+    margin-bottom: 20px;
+  }
+  
+  .startPrompt {
+    font-size: 24px;
+    color: #fff;
+    text-shadow: 1px 1px 2px #000;
+    text-align: center;
+    animation: blink 1s infinite;
+  }
+  
+  /* Blink animation for prompts */
+  @keyframes blink {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.2; }
+    100% { opacity: 1; }
+  }
