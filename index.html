@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- Responsive meta tag for mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Octy's Orange Odyssey</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -9,22 +11,22 @@
   <!-- Main Canvas -->
   <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-  <!-- In-Game UI (Score, Level) -->
+  <!-- In-Game UI (Score, Level) placed at top-right -->
   <div id="ui">
     <div id="score">Score: 0</div>
     <div id="level">Level: 1</div>
     <div id="controls">
-      <p>Move: Arrow Keys &nbsp;|&nbsp; Shoot Ink: Space</p>
+      <p>Move: Arrow Keys | Shoot Ink: Space</p>
     </div>
   </div>
 
-  <!-- Start Screen -->
+  <!-- Start Screen Overlay -->
   <div id="startScreen" class="overlay">
     <img id="startImage" src="assets/ui/start_screen.png" alt="Start Screen" />
     <p class="startPrompt">Press ENTER to Start</p>
   </div>
 
-  <!-- Game Over Screen -->
+  <!-- Game Over Screen Overlay -->
   <div id="gameOverScreen" class="overlay hidden">
     <img id="gameOverImage" src="assets/ui/game_over_screen.png" alt="Game Over Screen" />
     <p class="startPrompt">Press ENTER to Return to Title</p>

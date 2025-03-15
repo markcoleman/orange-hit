@@ -15,11 +15,13 @@ let gameRunning = false;
 let score = 0;
 let currentLevel = 1;
 let keys = {};
-let playerFacing = 1; // +1 for right, -1 for left
 
-// For ink shooting cooldown
+// Track Octy's facing: +1 for right, -1 for left
+let playerFacing = 1;
+
+// Ink shooting cooldown
 let lastShotTime = 0;
-const SHOT_COOLDOWN = 300; // ms between shots
+const SHOT_COOLDOWN = 300; // milliseconds
 
 // DOM Elements
 const uiDiv = document.getElementById('ui');
@@ -31,7 +33,7 @@ const gameOverScreenDiv = document.getElementById('gameOverScreen');
 /***************************************************
  * ASSET LOADING
  ***************************************************/
-// Adjust paths to match your folder structure
+// Update paths as needed
 const imgDeepOcean = new Image();
 imgDeepOcean.src = 'assets/environment/bg_deep_ocean.png';
 
@@ -56,7 +58,7 @@ imgBossOrange.src = 'assets/enemy/orange_boss.png';
 const imgSeaweed = new Image();
 imgSeaweed.src = 'assets/environment/seaweed.png';
 
-// Optional: If you have an ink sprite
+// Optional ink shot image
 const imgInk = new Image();
 imgInk.src = 'assets/player/ink_shot.png';
 
@@ -66,11 +68,11 @@ imgInk.src = 'assets/player/ink_shot.png';
 document.addEventListener('keydown', (e) => {
   keys[e.key] = true;
 
-  // Start screen -> Press Enter to start
+  // Start screen: press ENTER to start
   if (currentState === STATE.START && e.key === 'Enter') {
     startGame();
   }
-  // Game Over screen -> Press Enter to return to title
+  // Game Over screen: press ENTER to return to title
   else if (currentState === STATE.GAMEOVER && e.key === 'Enter') {
     goToStartScreen();
   }
@@ -121,11 +123,11 @@ class Player {
   update() {
     if (!gameRunning) return;
 
-    // Movement
+    // Vertical movement
     if (keys['ArrowUp'] && this.y > 0) this.y -= this.speed;
     if (keys['ArrowDown'] && this.y + this.height < canvas.height) this.y += this.speed;
 
-    // Track horizontal facing
+    // Horizontal movement and facing
     if (keys['ArrowLeft'] && this.x > 0) {
       this.x -= this.speed;
       playerFacing = -1;
@@ -143,20 +145,17 @@ class Player {
   }
   draw() {
     if (imgOcty.complete) {
-      // If we want to flip Octy when facing left, we can do so with canvas transforms:
+      // Flip horizontally if facing left
       if (playerFacing < 0) {
-        // Flip horizontally
         ctx.save();
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
         ctx.scale(-1, 1);
         ctx.drawImage(imgOcty, -this.width / 2, -this.height / 2, this.width, this.height);
         ctx.restore();
       } else {
-        // Normal draw
         ctx.drawImage(imgOcty, this.x, this.y, this.width, this.height);
       }
     } else {
-      // Fallback
       ctx.fillStyle = 'purple';
       ctx.fillRect(this.x, this.y, this.width, this.height);
     }
@@ -174,21 +173,17 @@ class InkShot {
     this.width = 16;
     this.height = 16;
     this.speed = 6;
-    this.direction = direction; // +1 for right, -1 for left
+    this.direction = direction; // +1: right, -1: left
     this.active = true;
   }
   update() {
     if (!this.active) return;
     this.x += this.speed * this.direction;
-    // Deactivate if off-screen
-    if (this.x < 0 || this.x > canvas.width) {
-      this.active = false;
-    }
+    if (this.x < 0 || this.x > canvas.width) this.active = false;
   }
   draw() {
     if (!this.active) return;
     if (imgInk.complete) {
-      // Similar flipping if facing left
       if (this.direction < 0) {
         ctx.save();
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
@@ -199,7 +194,6 @@ class InkShot {
         ctx.drawImage(imgInk, this.x, this.y, this.width, this.height);
       }
     } else {
-      // Fallback: small black circle
       ctx.fillStyle = 'black';
       ctx.beginPath();
       ctx.arc(this.x + this.width / 2, this.y + this.height / 2, 8, 0, Math.PI * 2);
@@ -209,13 +203,10 @@ class InkShot {
 }
 let inkShots = [];
 
-// Helper function to shoot
 function shootInk() {
-  // Create a new shot from player's position
-  const shotX = playerFacing > 0 ? player.x + player.width : player.x;
-  const shotY = player.y + player.height / 2 - 8; // center the shot
-  const newShot = new InkShot(shotX, shotY, playerFacing);
-  inkShots.push(newShot);
+  const shotX = (playerFacing > 0) ? (player.x + player.width) : player.x;
+  const shotY = player.y + (player.height / 2) - 8;
+  inkShots.push(new InkShot(shotX, shotY, playerFacing));
 }
 
 /***************************************************
@@ -274,7 +265,7 @@ class Enemy {
 let enemies = [];
 
 /***************************************************
- * BOSS ORANGE
+ * BOSS ORANGE (requires 5 ink shots to defeat)
  ***************************************************/
 class Boss {
   constructor(x, y, speed) {
@@ -285,6 +276,7 @@ class Boss {
     this.speed = speed;
     this.direction = 1;
     this.alive = true;
+    this.health = 5; // Requires 5 hits (ink shots) to die
   }
   update() {
     if (!this.alive || !gameRunning) return;
@@ -339,6 +331,28 @@ function isColliding(a, b) {
 }
 
 /***************************************************
+ * SAFE SPAWN HELPER
+ ***************************************************/
+// Returns coordinates that don't overlap with the player.
+function getSafeSpawnPosition(objWidth, objHeight) {
+  let x, y;
+  let attempts = 0;
+  const maxAttempts = 100;
+  do {
+    x = Math.random() * (canvas.width - objWidth);
+    y = Math.random() * (canvas.height - objHeight);
+    attempts++;
+    if (attempts > maxAttempts) break;
+  } while (
+    isColliding(
+      { x, y, width: objWidth, height: objHeight },
+      { x: player.x, y: player.y, width: player.width, height: player.height }
+    )
+  );
+  return { x, y };
+}
+
+/***************************************************
  * LEVEL INIT
  ***************************************************/
 function initLevel(level) {
@@ -348,34 +362,26 @@ function initLevel(level) {
   inkShots = [];
   boss = null;
 
-  // Place collectibles
+  // Spawn collectibles
   for (let i = 0; i < 5 + level; i++) {
     const x = Math.random() * (canvas.width - 32);
     const y = Math.random() * (canvas.height - 100) + 20;
     collectibles.push(new Collectible(x, y));
   }
 
-  // Place enemies
+  // Spawn enemy oranges (using safe spawn)
   for (let i = 0; i < 3 + level; i++) {
-    const x = Math.random() * (canvas.width - 48);
-    const y = Math.random() * (canvas.height - 120) + 50;
+    const { x, y } = getSafeSpawnPosition(48, 48);
     const speed = 1 + Math.random();
     enemies.push(new Enemy(x, y, speed));
   }
 
-  // Place seaweed
+  // Spawn seaweed (random near bottom)
   for (let i = 0; i < 4; i++) {
-    const x = Math.random() * (canvas.width - 32);
-    const y = canvas.height - 64;
-    seaweeds.push(new Seaweed(x, y));
+    const sx = Math.random() * (canvas.width - 32);
+    const sy = canvas.height - 64;
+    seaweeds.push(new Seaweed(sx, sy));
   }
-
-  // Boss
-  boss = new Boss(
-    canvas.width - 100,
-    Math.random() * (canvas.height - 100) + 50,
-    1 + level * 0.5
-  );
 }
 
 /***************************************************
@@ -384,7 +390,7 @@ function initLevel(level) {
 function gameLoop() {
   requestAnimationFrame(gameLoop);
 
-  if (!gameRunning) return; // If we're on start or game over, skip logic
+  if (!gameRunning) return;
 
   // Update backgrounds
   bgDeepOcean.update();
@@ -400,48 +406,53 @@ function gameLoop() {
   bgSeaFloor.draw();
 
   // Draw seaweed
-  seaweeds.forEach((s) => s.draw());
+  seaweeds.forEach(s => s.draw());
 
   // Update & draw ink shots
-  inkShots.forEach((shot) => {
+  inkShots.forEach(shot => {
     shot.update();
     shot.draw();
   });
 
   // Check ink collision with enemies
-  enemies.forEach((enemy) => {
+  enemies.forEach(enemy => {
     if (!enemy.alive) return;
-    inkShots.forEach((shot) => {
+    inkShots.forEach(shot => {
       if (shot.active && isColliding(shot, enemy)) {
         shot.active = false;
         enemy.alive = false;
-        score += 5; // points for killing an enemy
+        score += 5;
       }
     });
   });
 
-  // Check ink collision with boss
+  // If all enemies are eliminated and boss is not spawned, spawn the boss now.
+  if (!boss && enemies.every(e => !e.alive)) {
+    const { x: bx, y: by } = getSafeSpawnPosition(80, 80);
+    boss = new Boss(bx, by, 1 + currentLevel * 0.5);
+  }
+
+  // Check ink collision with boss (if boss exists)
   if (boss && boss.alive) {
-    inkShots.forEach((shot) => {
+    inkShots.forEach(shot => {
       if (shot.active && isColliding(shot, boss)) {
         shot.active = false;
-        boss.alive = false;
-        score += 10; // more points for killing the boss
+        boss.health -= 1;
+        if (boss.health <= 0) {
+          boss.alive = false;
+          score += 10;
+        }
       }
     });
   }
 
   // Update & draw enemies
-  enemies.forEach((e) => {
+  enemies.forEach(e => {
     e.update();
     e.draw();
-    // If colliding with player (and alive)
     if (e.alive && isColliding(player, e)) {
-      // Check if hiding behind seaweed
-      let hiding = seaweeds.some((s) => isColliding(player, s));
-      if (!hiding) {
-        endGame(false);
-      }
+      const hiding = seaweeds.some(s => isColliding(player, s));
+      if (!hiding) endGame(false);
     }
   });
 
@@ -450,15 +461,13 @@ function gameLoop() {
     boss.update();
     boss.draw();
     if (isColliding(player, boss)) {
-      let hiding = seaweeds.some((s) => isColliding(player, s));
-      if (!hiding) {
-        endGame(false);
-      }
+      const hiding = seaweeds.some(s => isColliding(player, s));
+      if (!hiding) endGame(false);
     }
   }
 
   // Update & draw collectibles
-  collectibles.forEach((c) => {
+  collectibles.forEach(c => {
     c.draw();
     if (!c.collected && isColliding(player, c)) {
       c.collected = true;
@@ -470,8 +479,8 @@ function gameLoop() {
   player.update();
   player.draw();
 
-  // Check if level complete (all collectibles) and boss not alive
-  const allCollected = collectibles.every((c) => c.collected);
+  // Level complete if all collectibles are collected and boss is defeated
+  const allCollected = collectibles.every(c => c.collected);
   const bossDefeated = !boss || !boss.alive;
   if (allCollected && bossDefeated) {
     currentLevel++;
@@ -512,7 +521,7 @@ function endGame(win) {
   gameRunning = false;
   currentState = STATE.GAMEOVER;
   gameOverScreenDiv.classList.remove('hidden');
-  // If you want a separate “You Win!” screen, you can swap out the image or add logic here.
+  // Optionally, adjust the game over screen based on win/lose
 }
 
 function goToStartScreen() {
@@ -524,7 +533,7 @@ function goToStartScreen() {
 
 function init() {
   goToStartScreen();
-  gameLoop();
+  gameLoop(); // Always running; game logic is gated by gameRunning.
 }
 
 init();

@@ -8,24 +8,29 @@ body {
     color: #fff;
   }
   
+  /* Make canvas responsive for mobile devices */
   #gameCanvas {
     display: block;
     margin: 0 auto;
     background: #000;
+    width: 100%;
+    max-width: 800px;
+    height: auto;
   }
   
+  /* UI styling: positioned in the top-right */
   #ui {
     position: absolute;
     top: 10px;
-    left: 10px;
+    right: 10px;
     z-index: 50;
     font-size: 20px;
+    text-align: right;
     display: none; /* Hidden until game starts */
   }
   #score, #level {
     margin: 5px 0;
   }
-  
   #controls {
     margin-top: 10px;
     font-size: 14px;
@@ -65,9 +70,9 @@ body {
     animation: blink 1s infinite;
   }
   
-  /* Simple blink animation */
+  /* Blink animation for prompts */
   @keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0.2; }
+    0%   { opacity: 1; }
+    50%  { opacity: 0.2; }
     100% { opacity: 1; }
   }
